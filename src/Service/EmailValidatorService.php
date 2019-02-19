@@ -1,17 +1,23 @@
 <?php
 namespace App\Service;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class EmailValidatorService
 {
 
+
     public function checkEmails($csvFileName){
 
-        $csvFile =
+        $csvFile = '/csv/'.$csvFileName;
 
 
-        return 'ok';
+
+        $correctAddresses = [];
+        $wrongAddeesses = [];
+        $summary = '';
+
+
+        return $csvFile;
 
     }
 
