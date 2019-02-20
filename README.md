@@ -1,6 +1,12 @@
 # email-validator
 
-A Simple Symfony-based command line tool to verify email addresses from CSV file.
+A Simple Symfony-based command line tool to verify email addresses from CSV file. 
+
+**Installation**
+
+After cloning the repository, run composer install. 
+
+**Usage**
 
 The CSV file needs to be put in __csv__ folder. Then you can run the validator by running command: 
 
