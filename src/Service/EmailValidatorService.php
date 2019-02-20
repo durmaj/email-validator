@@ -3,7 +3,6 @@ namespace App\Service;
 
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-
 class EmailValidatorService
 {
     private $params;
@@ -15,59 +14,91 @@ class EmailValidatorService
         $this->root = $projectDir;
     }
 
-
-    public function checkEmails($csvFileName){
-
+    public function checkEmails($csvFileName)
+    {
         $correctAddresses = [];
-        $wrongAddeesses = [];
-        $summary = '';
+        $correctCounter = 0;
+
+        $wrongAddresses = [];
+        $wrongCounter = 0;
+
+        $totalCounter = 0;
 
         $csvFile = $this->root.'/csv/'.$csvFileName;
         $resultPath = $this->root.'/csv/validator_result/';
 
-        //opening csv file
+        //opening CSV file
         $file = fopen($csvFile, "r");
 
         //checking if e-mail is valid and saving to dedicated array
-        while (($row = fgetcsv($file, 1000, ",")) !== false)
+        while (($row = fgetcsv($file, 0, ",")) !== false)
         {
+            $totalCounter++;
             $num = count($row);
             for ($i=0; $i < $num; $i++)
             {
                  if(filter_var($row[$i], FILTER_VALIDATE_EMAIL))
                  {
                      $correctAddresses[] = $row[$i];
+                     $correctCounter++;
                  } else {
-                     $wrongAddeesses[] = $row[$i];
+                     $wrongAddresses[] = $row[$i];
+                     $wrongCounter++;
                  }
             }
         }
         fclose($file);
 
-        //saving csv file with correct e-mail addresses
-        $correctCsv = fopen('correct_emails.csv', 'w');
-        fputcsv($correctCsv, $correctAddresses, ',');
+        //saving CSV file with correct e-mail addresses
+        $this->saveCsv('correct_emails.csv', $resultPath, $correctAddresses);
+
+        //changing CSV delimiter to new line
+        $this->changeDelimiter($resultPath.'correct_emails.csv');
+
+
+        //saving CSV with wrong e-mail addresses
+        $this->saveCsv('wrong_emails.csv', $resultPath, $wrongAddresses);
+
+
+        //changing CSV delimiter to new line
+        $this->changeDelimiter($resultPath.'wrong_emails.csv');
+
+        //creating TXT file with report
+        $this->createReport($totalCounter, $correctCounter, $wrongCounter, $resultPath);
+
+        return true;
+
+    }
+
+    // saving CSV file and moving it to provided directory
+    public function saveCsv($filename, $path, $content)
+    {
+        $correctCsv = fopen($filename, 'w');
+        fputcsv($correctCsv, $content, ',');
         fclose($correctCsv);
-        rename('correct_emails.csv', $resultPath.'correct_emails.csv');
+        rename($filename, $path.$filename);
+    }
 
-        //changing csv delimiter to new line
-        $replaceDelimiter = file_get_contents($resultPath.'correct_emails.csv');
+    // changing the delimiter in provided CSV file
+    public function changeDelimiter($file)
+    {
+        $replaceDelimiter = file_get_contents($file);
         $replaceDelimiter = str_replace(",", "\n", $replaceDelimiter);
-        file_put_contents($resultPath.'correct_emails.csv', $replaceDelimiter);
+        file_put_contents($file, $replaceDelimiter);
+    }
 
-        //saving csv with wrong e-mail addresses
-        $wrongCsv = fopen('wrong_emails.csv', 'w');
-        fputcsv($wrongCsv, $wrongAddeesses, ',');
-        fclose($wrongCsv);
-        rename('wrong_emails.csv', $resultPath.'wrong_emails.csv');
+    // creating TXT file with report from e-mail validation
+    public function createReport($total, $correct, $wrong, $path)
+    {
+        $content = "E-mail validation result: \n
+                    Total e-mails: $total
+                    Correct e-mails: $correct \n
+                    Wrong e-mails: $wrong";
 
-        //changing csv delimiter to new line
-        $replaceWrongDelimiter = file_get_contents($resultPath.'wrong_emails.csv');
-        $replaceWrongDelimiter = str_replace(",", "\n", $replaceWrongDelimiter);
-        file_put_contents($resultPath.'wrong_emails.csv', $replaceWrongDelimiter);
-
-        return 'ok';
-
+        $fp = fopen("report.txt","wb");
+        fwrite($fp,$content);
+        fclose($fp);
+        rename("report.txt", $path."report.txt");
     }
 
 }

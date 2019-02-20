@@ -39,7 +39,13 @@ class ValidatorCommand extends Command
 
         $result = $this->emailValidator->checkEmails($csvFileName);
 
-        $output->writeln([$result]);
+        if ($result)
+        {
+            $output->writeln(['Valitation completed. Please see the results in csv/validator_result folder']);
+        } else {
+            $output->writeln(['Sorry, something went wrong.']);
+        }
+
 
     }
 }
